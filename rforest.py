@@ -54,7 +54,8 @@ def cross_v_train(x,y):
         y_probs = rforest.predict_proba(x_train)
         # Roc(y_probs, y_train)
         skplt.metrics.plot_roc_curve(y_train,y_probs)
-        plt.savefig("c_roc1.png")
+        n = "c_roc80" + str(i) + ".png"
+        plt.savefig(n)
 
         avg.append(p)
 
@@ -149,7 +150,8 @@ if __name__ == "__main__":
         y_probs = rforest_cv.predict_proba(x_test[floor:ceil])
 		# Roc(y_probs, y_test[floor:ceil])
         skplt.metrics.plot_roc_curve(y_test[floor:ceil],y_probs)
-        plt.savefig("c_roc4.png")
+        n = "c_roc20" + str(i) + ".png"
+        plt.savefig(n)
 
 		floor = ceil
 		ceil = ceil + size_test		#do the cross-validation
