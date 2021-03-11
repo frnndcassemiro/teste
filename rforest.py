@@ -21,7 +21,6 @@ import warnings
 # def Roc(y_pred, y_test):
 # 	skplt.metrics.plot_roc_curve(y_test, y_pred)
 # 	plt.show()
-    plt.savefig("croc.png")
 
 def cross_v_train(x,y):
     floor = 0
@@ -99,7 +98,7 @@ if __name__ == "__main__":
     y_probs = rforest.predict_proba(x_train[size_train:])
     # Roc(y_probs, y_train[size_train:])
     skplt.metrics.plot_roc_curve(y_train[size_train:],y_probs)
-    plt.savefig("c_roc2.png")
+    plt.savefig("c_roc1.png")
 
     # Outro treinamento/teste deve ser feito usando validação cruzada com 5 pastas 
     # (k-fold cross validation com k = 5).
@@ -125,7 +124,7 @@ if __name__ == "__main__":
     y_probs = rforest.predict_proba(x_test)
     # Roc(y_probs, y_test)
     skplt.metrics.plot_roc_curve(y_test,y_probs)
-    plt.savefig("c_roc3.png")
+    plt.savefig("c_roc2.png")
 
 	size_test = int(len(x_test) * 0.2)
 	floor = 0
