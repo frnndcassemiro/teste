@@ -18,9 +18,10 @@ import numpy as np
 import warnings
 
 # gerar  gráfico curvas roc
-def Roc(y_pred, y_test):
-	skplt.metrics.plot_roc_curve(y_test, y_pred)
-	plt.show()
+# def Roc(y_pred, y_test):
+# 	skplt.metrics.plot_roc_curve(y_test, y_pred)
+# 	plt.show()
+    plt.savefig("croc.png")
 
 def cross_v_train(x,y):
     floor = 0
@@ -51,7 +52,9 @@ def cross_v_train(x,y):
 
         # Curvas ROC
         y_probs = rforest.predict_proba(x_train)
-        Roc(y_probs, y_train)
+        # Roc(y_probs, y_train)
+        skplt.metrics.plot_roc_curve(y_train,y_probs)
+        plt.savefig("c_roc1.png")
 
         avg.append(p)
 
@@ -93,7 +96,9 @@ if __name__ == "__main__":
 
     # Curvas ROC
     y_probs = rforest.predict_proba(x_train[size_train:])
-    Roc(y_probs, y_train[size_train:])
+    # Roc(y_probs, y_train[size_train:])
+    skplt.metrics.plot_roc_curve(y_train[size_train:],y_probs)
+    plt.savefig("c_roc2.png")
 
     # Outro treinamento/teste deve ser feito usando validação cruzada com 5 pastas 
     # (k-fold cross validation com k = 5).
@@ -117,7 +122,9 @@ if __name__ == "__main__":
 
     # Curvas ROC
     y_probs = rforest.predict_proba(x_test)
-    Roc(y_probs, y_test)
+    # Roc(y_probs, y_test)
+    skplt.metrics.plot_roc_curve(y_test,y_probs)
+    plt.savefig("c_roc3.png")
 
 	size_test = int(len(x_test) * 0.2)
 	floor = 0
@@ -140,7 +147,9 @@ if __name__ == "__main__":
 
         #Curvas ROC
         y_probs = rforest_cv.predict_proba(x_test[floor:ceil])
-		Roc(y_probs, y_test[floor:ceil])
+		# Roc(y_probs, y_test[floor:ceil])
+        skplt.metrics.plot_roc_curve(y_test[floor:ceil],y_probs)
+        plt.savefig("c_roc4.png")
 
 		floor = ceil
 		ceil = ceil + size_test		#do the cross-validation
