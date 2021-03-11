@@ -1,119 +1,155 @@
 from dataf import main
+from sklearn import metrics
+from sklearn.utils import *
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.utils import *
+from sklearn.model_selection import cross_val_predict
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import label_binarize
 from sklearn.metrics import confusion_matrix
-
-
+from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import mean_absolute_error
+import matplotlib.pyplot as plt
 import scikitplot as skplt
-import matplotlib.pyplot as plt  
 import numpy as np
 import warnings
 
+# gerar  gráfico curvas roc
+def Roc(y_pred, y_test):
+	skplt.metrics.plot_roc_curve(y_test, y_pred)
+	plt.show()
+
+def cross_v_train(x,y):
+    floor = 0
+    ceil = int (len(x) * 0.2)
+    rforest = RandomForestClassifier(n_estimators=100)
+    avg = []
+    for i in range(0,5):
+        x_test = x[floor:ceil]
+        x_train = x[:floor] + x[:ceil]
+
+        y_test = y[floor:ceil]
+        y_train = y[:floor] + y[:ceil]
+
+        rforest.fit(x_train,y_train)
+        y_pred = rforest.predict(x_train) 
+
+        # Precisão
+        p = p = precision_score(y_train, y_pred, average='micro')
+	    print("Precisão na pasta ",str(i),":",str(p))
+
+        # Erro
+        e = mean_absolute_error(y_train, y_pred)
+        print("Erro na pasta ",str(i),":",str(e))
+
+        # Matriz de confusão
+        cm = confusion_matrix(y_train, y_pred, labels = ['0','1','2','3','4','5','6','7','8'])
+        print(cm)
+
+        # Curvas ROC
+        y_probs = rforest.predict_proba(x_train)
+        Roc(y_probs, y_train)
+
+        avg.append(p)
+
+        floor = ceil
+		ceil = ceil+size
+		print('\n\n\n')
+
+    return rforest, np.mean(avg)
+
+
 if __name__ == "__main__":
+    
     warnings.filterwarnings("ignore")
+    
     x, y = main()
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=1)
+	
+    # Separar seu dataset em 2 porções (80% (train) e 20%(test))
+	x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=1, stratify=y)
+	
+    # Um treinamento deve ser feito com a porção 1 do dataset (80%). Nesta porção, 
+    # use divisão 80/20 (percentage split) para treino/teste
+    size_train = int(len(x_train) * 0.8)
+    # Configuração do algoritimo: n_estimators = 100 (quantidade de árvores de decisão usadas)
+    rforest = RandomForestClassifier(n_estimators=100)
+    rforest = rforest.fit(x_train[:size_train],y_train[:size_train])
 
-    # scores = []
-    # avg_cv = []
+	y_pred = rforest.predict(x_train[size_train:])
+    # Precisão
+    p = precision_score(y_train[size_train:], y_pred, average='micro')
+	print("Precisão:",str(p))
+    
+    # Erro
+    e = mean_absolute_error(y_train[size_train:], y_pred)
+	print("Erro:",str(e))
+    
+    # Matriz de confusão
+	cm = confusion_matrix(y_train[size_train:], y_pred, labels = ['0','1','2','3','4','5','6','7','8'])
+	print(cm)
 
-    # n_estimators = 10
-    rforest = RandomForestClassifier(n_estimators=10,oob_score=True)
-    rforest = rforest.fit(x_train,y_train)
-    # scores.append(rforest.score(x_test, y_test))
-    print("10 - rforest.score(x_test, y_test):",rforest.score(x_test, y_test))
-    cv_scores10 = cross_val_score(rforest,x_test,y_test, cv=5)
-    print("10 - cv_scores:", cv_scores10)
-    # avg_cv.append(np.mean(cv_scores1))
-    print("10 - cv_avg:", np.mean(cv_scores10))
-    print("10 - OBB:",rforest.oob_score_)
-    # y_pred = rforest.predict(x_test)
-    # cm = confusion_matrix(x, y_pred)
-    # print(cm)
+    # Curvas ROC
+    y_probs = rforest.predict_proba(x_train[size_train:])
+    Roc(y_probs, y_train[size_train:])
 
-    # n_estimators = 50
-    rforest = RandomForestClassifier(n_estimators=50,oob_score=True)
-    rforest = rforest.fit(x_train,y_train)
-    # scores.append(rforest.score(x_test, y_test))
-    print("50 - rforest.score(x_test, y_test):",rforest.score(x_test, y_test))
-    cv_scores50 = cross_val_score(rforest,x_test,y_test, cv=5)
-    print("50 - cv_scores:", cv_scores50)
-    # avg_cv.append(np.mean(cv_scores50))
-    print("50 - cv_avg:", np.mean(cv_scores50))
-    print("50 - OBB:",forest.oob_score_)
-    # y_pred = rforest.predict(x_test)
-    # cm = confusion_matrix(x, y_pred)
-    # print(cm)
+    # Outro treinamento/teste deve ser feito usando validação cruzada com 5 pastas 
+    # (k-fold cross validation com k = 5).
+    rforest_cv, scores = cross_v_train(x_train[:size_train],y_train[:size_train])
+	print("Scores teste K-fold com 5 pastas: " + str(scores))
 
-    # n_estimators = 100
-    rforest = RandomForestClassifier(n_estimators=100,oob_score=True)
-    rforest = rforest.fit(x_train,y_train)
-    # scores.append(rforest.score(x_test, y_test))
-    print("100 - rforest.score(x_test, y_test):",rforest.score(x_test, y_test))
-    cv_scores100 = cross_val_score(rforest,x_test,y_test, cv=5)
-    print("100 - cv_scores:", cv_scores100)
-    # avg_cv.append(np.mean(cv_scores100))
-    print("100 - cv_avg:", np.mean(cv_scores100))
-    print("100 - OBB:",forest.oob_score_)
-    # y_pred = rforest.predict(x_test)
-    # cm = confusion_matrix(x, y_pred)
-    # print(cm)
+    # Utilizar a porção 2 do dataset (20%) como “dados de produção não-rotulados” e 
+    # refazer os passos 2 e 3 (somente teste do modelo) acima listados.
+	y_pred = rforest.predict(x_test)
+    # Precisão
+    p = precision_score(y_test, y_pred, average='micro')
+	print("Precisão:",str(p))
+    
+    # Erro
+    e = mean_absolute_error(y_test, y_pred)
+	print("Erro:",str(e))
 
-    # n_estimators = 200
-    rforest = RandomForestClassifier(n_estimators=200,oob_score=True)
-    rforest = rforest.fit(x_train,y_train)
-    # scores.append(rforest.score(x_test, y_test))
-    print("200 - rforest.score(x_test, y_test):",rforest.score(x_test, y_test))
-    cv_scores200 = cross_val_score(rforest,x_test,y_test, cv=5)
-    print("200 - cv_scores:", cv_scores200)
-    # avg_cv.append(np.mean(cv_scores200))
-    print("200 - cv_avg:", np.mean(cv_scores200))
-    print("200 - OBB:",forest.oob_score_)
-    # y_pred = rforest.predict(x_test)
-    # cm = confusion_matrix(x, y_pred)
-    # print(cm)
+    # Matriz de confusão
+	cm = confusion_matrix(y_test, y_pred, labels = ['0','1','2','3','4','5','6','7','8'])
+	print(cm)
 
-    #------------------------------------
+    # Curvas ROC
+    y_probs = rforest.predict_proba(x_test)
+    Roc(y_probs, y_test)
 
-    # gerar  gráfico curvas roc
-    # y_pred_proba = rforest.predict_proba(x_test)
-    # skplt.metrics.plot_roc_curve(y_test,y_pred_proba)
-    # plt.show()
+	size_test = int(len(x_test) * 0.2)
+	floor = 0
+	ceil = size_test
 
-    #------------------------------------
+	for i in range(0, 5):
+        y_pred = rforest_cv.predict(x_test[floor:ceil])
+        # Precisão
+        p = precision_score(y_test[floor:ceil], y_pred, average='micro'))
+		print("Precisão (teste 20%): "+ str(p))
 
-    # avg_cv.append(0.3150072361095906) 
-    # avg_cv.append(0.3227799471143751) 
-    # avg_cv.append(0.3202220777172312)
-    # avg_cv.append(0.3199790972702137)
-    # print ('done!')
+        # Erro
+        e = mean_absolute_error(y_test[floor:ceil], y_pred)
+		print("Erro (teste 20%): " + str(e))
 
-    # scores.append(0.6379710005914984) 
-    # scores.append(0.6460921138874235) 
-    # scores.append(0.6476268124630313) 
-    # scores.append(0.6473870158105927)
-    # print ('done!')
+        # Matriz de Confusão
+        print('Matriz de Confusão K-Fold' + str(i) + ':')
+        cm = confusion_matrix(y_test[floor:ceil], y_pred, labels = ['0','1','2','3','4','5','6','7','8'])
+        print(cm)
 
-    #------------------------------------
+        #Curvas ROC
+        y_probs = rforest_cv.predict_proba(x_test[floor:ceil])
+		Roc(y_probs, y_test[floor:ceil])
 
-    # avg_cv.append(0.31174927748748277) 
-    # avg_cv.append(0.317555533115106) 
-    # avg_cv.append(0.3187992953889669)
-    # print ('done!')
-    # print ('avg[0]:',avg[0])
-    # print ('avg[1]:',avg[1])
-    # print ('avg[1]:',avg[2])
+		floor = ceil
+		ceil = ceil + size_test		#do the cross-validation
 
-    # scores.append(0.6406567230988122) 
-    # scores.append(0.6460121816699439) 
-    # scores.append(0.6470513004971784)
-    # print ('done!')
-    # print ('scores[0]:',scores[0])
-    # print ('scores[1]:',scores[1])
-    # print ('scores[2]:',scores[2])
+		print('\n\n\n')
 
+	#cv_scores = cross_val_score(rforest_cv, x_test, y_test, cv=5)
+	#print("Acurácia no dataset de teste com Cross_Validation: " + str(np.mean(cv_scores)))
+    
     # gerar gráfico de acurácia sem cross validation
     # plt.plot([10,50,100],scores,color = 'blue')
     # plt.xlabel('Número de árvores na floresta')
@@ -127,10 +163,3 @@ if __name__ == "__main__":
     # plt.ylabel('Acurácia média com cross validation')
     # plt.title('Acurácia média/Número de árvores com cross validation')
     # plt.show()
-
-    # ----------------------------------
-
-    # 10 - rforest.score(x_test, y_test): 0.6369638546512557
-    # 10 - cv_scores: [0.56798018 0.57421469 0.5653425  0.56986411 0.57018385]
-    # 10 - cv_avg: 0.5695170657495265
-    # 10 - OBB: 0.6108158012533572
