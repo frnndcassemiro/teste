@@ -26,9 +26,9 @@ def cross_v_train(x,y):
     floor = 0
     size = int(len(x) * 0.2)
     ceil = size
-    prec, error, rforest_list = [], [], []
+    rforest = RandomForestClassifier(n_estimators=100)
+    avg = []
     for i in range(0,5):
-        rforest = RandomForestClassifier(n_estimators=100)
         x_test = x[floor:ceil]
         x_train = x[:floor] + x[:ceil]
 
@@ -46,10 +46,6 @@ def cross_v_train(x,y):
         e = mean_absolute_error(y_train, y_pred)
         print("Erro na pasta ",str(i),":",str(e))
 
-        prec.append(p)
-        error.append(e)
-        rforest_list.append(rforest)
-
         # Matriz de confusão
         cm = confusion_matrix(y_train, y_pred, labels = ['0','1','2','3','4','5','6','7','8'])
         print(cm)
@@ -58,19 +54,17 @@ def cross_v_train(x,y):
         y_probs = rforest.predict_proba(x_train)
         # Roc(y_probs, y_train)
         skplt.metrics.plot_roc_curve(y_train,y_probs)
-        n = "c_roc80_kfold_" + str(i) + ".png"
+        n = "c_roc80" + str(i) + ".png"
         plt.savefig(n)
 
-        prec.append(p)
+        avg.append(p)
 
         floor = ceil
         ceil = ceil + size
-        print('\n\n')
+        print('\n\n\n')
 
-    max_precision = max(prec)
-    index = prec.index(max_precision)
-    rforest = rforest_list[index]
-    return rforest, np.mean(prec), np.mean(error)
+    return rforest, np.mean(avg)
+
 
 if __name__ == "__main__":
     
@@ -105,15 +99,15 @@ if __name__ == "__main__":
     y_probs = rforest.predict_proba(x_train[size_train:])
     # Roc(y_probs, y_train[size_train:])
     skplt.metrics.plot_roc_curve(y_train[size_train:],y_probs)
-    plt.savefig("c_roc_modelo1.png")
+    plt.savefig("c_roc1.png")
 
     # Outro treinamento/teste deve ser feito usando validação cruzada com 5 pastas 
     # (k-fold cross validation com k = 5).
-    rforest_cv, score, error = cross_v_train(x_train[:size_train],y_train[:size_train])
-    print("Scores Médio teste K-fold: " + str(score), end='\n\n\n')
+    rforest_cv, scores = cross_v_train(x_train[:size_train],y_train[:size_train])
+    print("Scores teste K-fold com 5 pastas: " + str(scores))
 
-    # Utilizar a porção 2 do dataset (20%) como “dados de produção não-rotulados”,
-    # Utilizar esses 20% para testar o primeiro modelo
+    # Utilizar a porção 2 do dataset (20%) como “dados de produção não-rotulados” e 
+    # refazer os passos 2 e 3 (somente teste do modelo) acima listados.
     y_pred = rforest.predict(x_test)
     # Precisão
     p = precision_score(y_test, y_pred, average='micro')
@@ -131,53 +125,52 @@ if __name__ == "__main__":
     y_probs = rforest.predict_proba(x_test)
     # Roc(y_probs, y_test)
     skplt.metrics.plot_roc_curve(y_test,y_probs)
-    plt.savefig("c_roc20_modelo1.png")
+    plt.savefig("c_roc2.png")
 
-    # Utilizar esses 20% para testar o melhor modelo entre os modelos KFold
-    y_pred = rforest_cv.predict(x_test)
-    # Precisão
-    p = precision_score(y_test, y_pred, average='micro')
-    print("Precisão:",str(p))
+    size_test = int(len(x_test) * 0.2)
+    floor = 0
+    ceil = size_test
 
-    # Erro
-    e = mean_absolute_error(y_test, y_pred)
-    print("Erro:",str(e))
+    for i in range(0, 5):
+        y_pred = rforest_cv.predict(x_test[floor:ceil])
+        # Precisão
+        p = precision_score(y_test[floor:ceil], y_pred, average='micro')
+        print("Precisão (teste 20%): "+ str(p))
 
-    # Matriz de confusão
-    cm = confusion_matrix(y_test, y_pred, labels = ['0','1','2','3','4','5','6','7','8'])
-    print(cm)
+        # Erro
+        e = mean_absolute_error(y_test[floor:ceil], y_pred)
+        print("Erro (teste 20%): " + str(e))
 
-    # Curvas ROC
-    y_probs = rforest_cv.predict_proba(x_test)
-    # Roc(y_probs, y_test)
-    skplt.metrics.plot_roc_curve(y_test,y_probs)
-    plt.savefig("c_roc20_kfold.png")
+        # Matriz de Confusão
+        print('Matriz de Confusão K-Fold' + str(i) + ':')
+        cm = confusion_matrix(y_test[floor:ceil], y_pred, labels = ['0','1','2','3','4','5','6','7','8'])
+        print(cm)
 
-    # size_test = int(len(x_test) * 0.2)
-    # floor = 0
-    # ceil = size_test
+        #Curvas ROC
+        y_probs = rforest_cv.predict_proba(x_test[floor:ceil])
+        # Roc(y_probs, y_test[floor:ceil])
+        skplt.metrics.plot_roc_curve(y_test[floor:ceil],y_probs)
+        n = "c_roc20" + str(i) + ".png"
+        plt.savefig(n)
 
-    # for i in range(0, 5):
-    #     y_pred = rforest_cv.predict(x_test[floor:ceil])
-    #     # Precisão
-    #     p = precision_score(y_test[floor:ceil], y_pred, average='micro')
-    #     print("Precisão (teste 20%): "+ str(p))
+        floor = ceil
+        ceil = ceil + size_test		#do the cross-validation
 
-    #     # Erro
-    #     e = mean_absolute_error(y_test[floor:ceil], y_pred)
-    #     print("Erro (teste 20%): " + str(e))
+        print('\n\n\n')
 
-    #     # Matriz de Confusão
-    #     print('Matriz de Confusão K-Fold' + str(i) + ':')
-    #     cm = confusion_matrix(y_test[floor:ceil], y_pred, labels = ['0','1','2','3','4','5','6','7','8'])
-    #     print(cm)
+	#cv_scores = cross_val_score(rforest_cv, x_test, y_test, cv=5)
+	#print("Acurácia no dataset de teste com Cross_Validation: " + str(np.mean(cv_scores)))
+    
+    # gerar gráfico de acurácia sem cross validation
+    # plt.plot([10,50,100],scores,color = 'blue')
+    # plt.xlabel('Número de árvores na floresta')
+    # plt.ylabel('Acurácia')
+    # plt.title('Acurácia/Número de árvores na floresta')
+    # plt.show()
 
-    #     #Curvas ROC
-    #     y_probs = rforest_cv.predict_proba(x_test[floor:ceil])
-    #     # Roc(y_probs, y_test[floor:ceil])
-    #     skplt.metrics.plot_roc_curve(y_test[floor:ceil],y_probs)
-    #     n = "c_roc20" + str(i) + ".png"
-    #     plt.savefig(n)
-
-    #     floor = ceil
-    #     ceil = ceil + size_test		#do the cross-validation
+    # gerar gráfico de acurácia média por número de árvores na floresta
+    # plt.plot([10,50,100],avg_cv,color = 'blue')
+    # plt.xlabel('Número de árvores na floresta')
+    # plt.ylabel('Acurácia média com cross validation')
+    # plt.title('Acurácia média/Número de árvores com cross validation')
+    # plt.show()
