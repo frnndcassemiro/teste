@@ -133,7 +133,7 @@ if __name__ == "__main__":
     for i in range(0, 5):
         y_pred = rforest_cv.predict(x_test[floor:ceil])
         # Precisão
-        p = precision_score(y_test[floor:ceil], y_pred, average='micro'))
+        p = precision_score(y_test[floor:ceil], y_pred, average='micro')
         print("Precisão (teste 20%): "+ str(p))
 
         # Erro
