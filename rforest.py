@@ -23,9 +23,9 @@ import warnings
 # 	plt.show()
 
 def cross_v_train(x,y):
-	floor = 0
-	size = int(len(x) * 0.2)
-	ceil = size
+    floor = 0
+    size = int(len(x) * 0.2)
+    ceil = size
     rforest = RandomForestClassifier(n_estimators=100)
     avg = []
     for i in range(0,5):
